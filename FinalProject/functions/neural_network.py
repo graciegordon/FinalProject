@@ -23,8 +23,9 @@ class Layer:
             weights=np.zeros((self.nodes,nextnode)) #make weight matrix
             for i in range(self.nodes): #number input nodes
                 for j in range(nextnode): #number of nodes in the next layer
-                    weights[i][j]=np.random.normal(0,0.01**2)
-            
+                    #weights[i][j]=np.random.normal(0,0.01**2)
+                    weights[i][j]=np.random.normal(0,2)
+ 
             self.weights = weights
             print('weight',weights)
         return weights
@@ -84,7 +85,8 @@ def backpropagation(network, x,y):
     #special calc for the output layer
     a=activations[-1] #output layer activations
     lastact=activations[-1] #store output avctivations
-    sigslope=a*(1-a) #calculate sigmoid'(z) where z is the weights*activations, elementwise multiplication
+    #sigslope=a*(1-a) #calculate sigmoid'(z) where z is the weights*activations, elementwise multiplication
+    #print('a',a)
     #delta=-(y-a)*sigslope #outpus layer delta = activation-output
     #output delta
     delta=(a-y) #last layer delta=activation-output
@@ -130,9 +132,9 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
     #D=(1/m)*D+lambda*weights
     inputnodes=np.shape(xmatrix)[0]
     outputnodes=np.shape(ymatrix)[0]
-    print(np.shape(xmatrix))
-    print('outnodes',np.shape(ymatrix))
-    print(len(np.shape(ymatrix)))
+    #print(np.shape(xmatrix))
+    #print('outnodes',np.shape(ymatrix))
+    #print(len(np.shape(ymatrix)))
     
     #if len(np.shape(ymatrix))==1:
     #    ydim=1
@@ -140,12 +142,13 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
     #    ydim=np.shape(ymatrix)[1]
     #print(ydim)
     trainingnum=np.shape(xmatrix)[1]
-    print(inputnodes,outputnodes,trainingnum)    
+    #print(inputnodes,outputnodes,trainingnum)    
     #store outputs 
     outputlayer=np.zeros_like(ymatrix)
-    print(outputlayer)
-    print(xmatrix)
-    print(ymatrix)
+    outputlayer=outputlayer.astype(float)
+    #print(outputlayer)
+    #print(xmatrix)
+    #print(ymatrix)
     #set columns to inputs
     #loop through training data
     #numOuts=np.shape(outputlayer)[1]
@@ -161,23 +164,40 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
         y=np.zeros([outputnodes,1])
         y[:,0]=ymatrix[:,i]
     
-        print('x',x)
-        print('y',y)
+        #print('x',x)
+        #print('y',y)
 
         #calculate deltas from forward then backpropegation function
         gradW,gradB,lastact=backpropagation(network,x,y)
-        
+        ###Why will my activation not add to the final activation matrix???? 
+        #print('act',lastact)
+        lastact=np.array(lastact)
         fatemp=np.transpose(outputlayer)
-        fatemp[i,:]=np.transpose(lastact)
+        #print('full fat',fatemp)
+        acttrans=np.transpose(lastact)
+        #print('acttrans',acttrans)
+        #print('fatpos',fatemp[i,:])
         
+        fatemp[i,:]=acttrans
+        #print('edited fa',fatemp[i,:])
+        #print('trans last act', np.transpose(lastact))
+        
+        #fatemp[i,:]=np.transpose(lastact)
+        #print('fat2',fatemp) 
         outputlayer=np.transpose(fatemp)
         #print('out',outputlayer)
-
+        #print('act',lastact)
         #print('dW',deltaW)
         #print('gW',gradW)
         #get sum of detlas (gradient) for each layer
         #matrix of D
         #D:=1/m(bigDelta)+lambda*curWeight
+        
+        #print('datatypes')
+        #print('act',lastact.dtype)
+        #print('fa',fatemp.dtype)
+        #print('outlayer',outputlayer.dtype)
+
         #calculate bigDelta
         for L in range(len(network)-1):
             #all other deltas

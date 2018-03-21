@@ -6,9 +6,9 @@ from random import shuffle
 import numpy as np
 
 #read in sites
-posfile='/Users/student/Documents/Algorithms/FinalProject/data/rap1-lieb-positives.txt'
-negfile='/Users/student/Documents/Algorithms/FinalProject/data/yeast-upstream-1k-negative.fa'
-testfile='/Users/student/Documents/Algorithms/FinalProject/data/rap1-lieb-test.txt'
+posfile='/Users/student/Documents/Algorithms/Alg_final_project/FinalProject/data/rap1-lieb-positives.txt'
+negfile='/Users/student/Documents/Algorithms/Alg_final_project/FinalProject/data/yeast-upstream-1k-negative.fa'
+testfile='/Users/student/Documents/Algorithms/Alg_final_project/FinalProject/data/rap1-lieb-test.txt'
 poslist=util.read_pos(posfile)
 poslist=util.seq_encode(poslist)
 #print(poslist)
@@ -110,7 +110,7 @@ print('new',newnet)
 #print(samples[0])
 mincost=float('inf')
 testcost=5
-for i in range(100):
+for i in range(1000):
     #while mincost>=float(testcost):
     testcost, finalactivation, trainednetwork = nn.gradientdescent(newnet, sampleInput, labels)
     print('cost',testcost)
@@ -121,6 +121,7 @@ for i in range(100):
         mincost=testcost
 print('final cost',mincost)
 print('final',final)
+print('labels', labels)
 print('rounded',final.round(decimals=2))
 
 '''
