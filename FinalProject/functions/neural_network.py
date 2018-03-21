@@ -3,6 +3,7 @@
 import sys
 sys.setrecursionlimit(10000)
 import numpy as np
+from random import shuffle
 
 class Layer:
 
@@ -55,7 +56,7 @@ class Layer:
         return "{0}".format(self.nodes)
         #return "{0} {1}".format(self.nodes, self.act)
 
-def feedforward(network,x,y):
+def feedforward(network,x):
     #feed forward
     activations=[None]*(len(network)) #store activations from network
     for layer in range(len(network)):
@@ -80,7 +81,7 @@ def backpropagation(network, x,y):
     weights=[None]*(len(network))
     #move to feedforward function
 
-    activations=feedforward(network,x,y)
+    activations=feedforward(network,x)
     #backprop
     #special calc for the output layer
     a=activations[-1] #output layer activations
@@ -238,45 +239,111 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
     
     return totalcost, outputlayer, network
 
-'''
-##testing autoencoder
-networkShape = np.array([8,3,8])
-inputs = Layer(networkShape[0], None, networkShape[1])
-hidden = Layer(networkShape[1], inputs, networkShape[2]) # hidden layer with 3 nodes, takes in inputs layer
-outputs = Layer(networkShape[2], hidden) 
-newnet = np.array([inputs, hidden, outputs])
+def trainNet(samples, labels, inputexample,iters):
+    #function that will train a neural network
+    #create network
+    ins=inputexample
+    print('ins',ins)
+    networkShape = np.array([ins,int(ins/2),1])
+    print('netshape', networkShape)
+    inputs = Layer(networkShape[0], None, networkShape[1])
+    hidden = Layer(networkShape[1], inputs, networkShape[2])
+    outputs = Layer(networkShape[2], hidden)
+    newnet = np.array([inputs, hidden, outputs])
+    print('in',inputs)
+    print('hid',hidden)
+    print('out',outputs)
+    print('new',newnet)
 
-print('in',inputs)
-print('hid',hidden)
-print('out',outputs)
-print('new',newnet)
+    #train x times and take lowest cost
+    #can make this more sophisticated by training until cost no longer decreases more than a specific amount
+    mincost=float('inf')
+    for i in range(iters):
+        testcost, finalactivation, trainednetwork = gradientdescent(newnet, samples, labels)
+        #print('cost',testcost)
+        #print('activation',finalactivation)
+        if mincost>float(testcost):
+            #print('inloop')
+            final=finalactivation
+            mincost=testcost
+    
+    return trainednetwork, final, mincost
 
-#identityinput3 = np.identity(3)
-identityinput8 = np.identity(8)
+def testNet(network, samples):
+    #given a trained network and new data, it will run the new data through the network
+    activations= feedforward(network, samples)
+    return activations[-1]
 
-#print(identityinput3)
-print('start')
-print(identityinput8)
-#x = np.array([[1],[0],[0],[0],[0],[0],[0],[0]])
-mincost=float('inf')
-testcost=5
-for i in range(2000):
-    #while mincost>=float(testcost):
-    testcost, finalactivation, trainednetwork = gradientdescent(newnet, identityinput8, identityinput8)
-    #print('cost',testcost)
-    #print('activation',finalactivation)
-    if mincost>float(testcost):
-        #print('inloop')
-        final=finalactivation
-        mincost=testcost
-print('final cost',mincost)
-print('final',final)
-print('rounded',final.round(decimals=2))
+def shufflePosNegs(poslist,neglist):
+    #input positive and negative list, shuffle and return
+    #shuffle lists
+    shuffle(poslist)
+    shuffle(neglist)
+    #print(poslist[:10])
+    #print(neglist[:10])
 
-testmat=np.matrix(np.random.random_integers(0,1,(8, 8)))
-print(testmat)
-#validate
-CVact=feedforward(trainednetwork,testmat, testmat)
-print('CV')
-print(CVact[-1].round(decimals=2))
-'''
+    #select x examples from each list
+    shortposlist=list(np.random.choice(poslist,50,replace=False))
+    shortneglist=list(np.random.choice(neglist,50,replace=False))
+    print('rand',shortposlist[:10])
+    print('rand',shortneglist[:10])
+    set1=[]
+
+    #label negative and positive examples
+    #0 is negative 1 is positive
+    for i in shortposlist:
+        #print(i)
+        set1.append((i,1))
+        #print(set1)
+    for i in shortneglist:
+        #print(i)
+        set1.append((i,0))
+
+    #shuffle set
+    shuffle(set1)
+    print('set')
+    print(set1)
+    
+    #samples, x to feed into network, labels y to match to the output of the network
+    samples=[ x[0] for x in set1 ]
+    labels=[ x[1] for x in set1 ]
+    label=[] 
+
+    labels=np.array(labels)
+    labels=labels.reshape(1, len(labels))
+    print(samples)
+    print('labels',labels)
+    sampleTemp1=[]
+    it=0
+    for i in samples:
+        sampleTemp1.extend(i)
+        #print(len(i))
+        #it+=1
+    #print('len sample',it)
+    #print(sampleTemp1)
+    sampleTemp=np.array(sampleTemp1)
+    print('array')
+    print(sampleTemp)
+    lensamples=len(samples[0])
+    shape=(int(len(samples)),int(len(samples[0])))
+    print(shape)
+    sampleTemp=sampleTemp.reshape(shape)
+    print('reshape')
+    print(sampleTemp)
+    sampleInput=np.transpose(sampleTemp)
+    print('transpose')
+    print(sampleInput)
+    
+    return sampleInput, labels, lensamples
+
+def kfoldStratification(samples, labels):
+    #this function will split data into training and test sets X times, 10 is the default
+    #first just do one split into training and test sets
+    
+    assert 1==1
+
+
+def crossValidation(train, test):
+    #this function will train a network then test the network
+    assert 1==1
+
