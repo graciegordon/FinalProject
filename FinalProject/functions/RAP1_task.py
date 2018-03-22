@@ -16,7 +16,7 @@ poslist=util.seq_encode(poslist)
 #print('neg')
 
 neglist=util.read_fasta(negfile)
-print('negs',neglist[:10])
+#print('negs',neglist[:10])
 
 shortneg=[]
 for i in neglist:
@@ -33,15 +33,17 @@ print('neglist',neglist[:10])
 #keep track of which samples come from each group
 #start with small training set
 
-sampleInputs,labels,samplelength=nn.shufflePosNegs(poslist,neglist)
+#sampleInputs,labels,samplelength=nn.shufflePosNegs(poslist,neglist)
 
-trainednet,final,mincost=nn.trainNet(sampleInputs, labels, samplelength,1000)
+#trainednet,final,mincost=nn.trainNet(sampleInputs, labels, samplelength,1000)
 
+nn.CVtrainNet(poslist,neglist,1000)
 
+'''
 print('final cost',mincost)
 print('final',final)
 print('labels', labels)
 print('rounded',final.round(decimals=2))
-
+'''
 #testlist=util.read_pos(testfile)
 #print('test',testlist)
