@@ -4,6 +4,8 @@ import sys
 sys.setrecursionlimit(10000)
 import numpy as np
 from random import shuffle
+from collections import Counter
+import utils as util
 
 class Layer:
 
@@ -114,7 +116,7 @@ def backpropagation(network, x,y):
 
     return gradw, gradb, lastact
 
-def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
+def gradientdescent(network, xmatrix, ymatrix, alpha=0.1, weightDecay=0.9):
     #use logistic regression cost function with regularization
     #weightdeca=lambda
     #J(W,b,x,y)=1/numbertrainingexamples(sum(y*log(h(x))+(1-y)*log(1-(h(x)))))+lambda/2numexampels(sum(sum(sum(weights)^2
@@ -134,40 +136,21 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
     #D=(1/m)*D+lambda*weights
     inputnodes=np.shape(xmatrix)[0]
     outputnodes=np.shape(ymatrix)[0]
-    #print(np.shape(xmatrix))
-    #print('outnodes',np.shape(ymatrix))
-    #print(len(np.shape(ymatrix)))
-    
-    #if len(np.shape(ymatrix))==1:
-    #    ydim=1
-    #else:
-    #    ydim=np.shape(ymatrix)[1]
-    #print(ydim)
     trainingnum=np.shape(xmatrix)[1]
     #print(inputnodes,outputnodes,trainingnum)    
+    
     #store outputs 
     outputlayer=np.zeros_like(ymatrix)
     outputlayer=outputlayer.astype(float)
-    #print(outputlayer)
-    #print(xmatrix)
-    #print(ymatrix)
+    
     #set columns to inputs
     #loop through training data
-    #numOuts=np.shape(outputlayer)[1]
-    #ymatrix=np.array(ymatrix)
-    #print(ymatrix)
     for i in range(trainingnum):
         x=np.zeros([inputnodes,1])
-        #y=np.zeros([outputnodes,1])
-        #print('x',x)
         x[:,0]=xmatrix[:,i]
-        #y[:,0]=ymatrix[:,i]
         
         y=np.zeros([outputnodes,1])
         y[:,0]=ymatrix[:,i]
-    
-        #print('x',x)
-        #print('y',y)
 
         #calculate deltas from forward then backpropegation function
         gradW,gradB,lastact=backpropagation(network,x,y)
@@ -187,18 +170,6 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
         #fatemp[i,:]=np.transpose(lastact)
         #print('fat2',fatemp) 
         outputlayer=np.transpose(fatemp)
-        #print('out',outputlayer)
-        #print('act',lastact)
-        #print('dW',deltaW)
-        #print('gW',gradW)
-        #get sum of detlas (gradient) for each layer
-        #matrix of D
-        #D:=1/m(bigDelta)+lambda*curWeight
-        
-        #print('datatypes')
-        #print('act',lastact.dtype)
-        #print('fa',fatemp.dtype)
-        #print('outlayer',outputlayer.dtype)
 
         #calculate bigDelta
         for L in range(len(network)-1):
@@ -206,8 +177,6 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
             deltaW[L]=deltaW[L]+gradW[L]
             #bias delta
             deltaB[L]=deltaB[L]+gradB[L]
-    
-    
     
     #update weight and bias by changing the weights using the learning rate and gradient
     for Layer in range(len(network)-1):
@@ -218,13 +187,10 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.5, weightDecay=0.9):
         #update bias without regularization
         newB=network[Layer].bias-alpha*((1/trainingnum)*deltaB[Layer])
         
-        #newB=(1/trainingnum)*(deltaW[Layer])
         #update arrays
         network[Layer].weights=newW
         network[Layer].bias=newB
 
-    #print(outputlayer)
-    #print(deltaW)
     #calculate cost from this round 
     cost=-(1/trainingnum)*sum(sum((ymatrix*np.log10(outputlayer)+(1-ymatrix)*np.log10(1-(outputlayer)))))
     reg=0
@@ -246,20 +212,22 @@ def trainNet(samples, labels, inputexample,iters):
     ins=inputexample
     #print('ins',ins)
     networkShape = np.array([ins,int(ins/2),1])
-    print('netshape', networkShape)
+    #print('netshape', networkShape)
     inputs = Layer(networkShape[0], None, networkShape[1])
     hidden = Layer(networkShape[1], inputs, networkShape[2])
     outputs = Layer(networkShape[2], hidden)
     newnet = np.array([inputs, hidden, outputs])
-    print('in',inputs)
-    print('hid',hidden)
-    print('out',outputs)
-    print('new',newnet)
+    #print('in',inputs)
+    #print('hid',hidden)
+    #print('out',outputs)
+    #print('new',newnet)
 
     #train x times and take lowest cost
     #can make this more sophisticated by training until cost no longer decreases more than a specific amount
     mincost=float('inf')
-    for i in range(iters):
+    #for i in range(iters):
+    trainup=0    
+    while mincost > .0001:
         testcost, finalactivation, trainednetwork = gradientdescent(newnet, samples, labels)
         #print('cost',testcost)
         #print('activation',finalactivation)
@@ -267,6 +235,10 @@ def trainNet(samples, labels, inputexample,iters):
             #print('inloop')
             final=finalactivation
             mincost=testcost
+        else:
+            trainup+=1
+
+    '''
     print('final')   
     print('in',inputs.weights)
     print('hid',hidden.weights)
@@ -275,17 +247,18 @@ def trainNet(samples, labels, inputexample,iters):
     for i in newnet:
         print(i)
         print(i.weights)
+    '''
     return trainednetwork, final, mincost
 
 def testNet(network, xmatrix):
     #given a trained network and new data, it will run the new data through the network
     inputnodes=np.shape(xmatrix)[0]
     trainingnum=np.shape(xmatrix)[1]
-    print(trainingnum)
+    #print(trainingnum)
     outputlayer=np.zeros(trainingnum)
-    outputlayer=np.reshape(outputlayer,(1,10))
+    outputlayer=np.reshape(outputlayer,(1,trainingnum))
     outputlayer=outputlayer.astype(float)
-    print('out',outputlayer)
+    #print('out',outputlayer)
     for i in range(trainingnum):
         x=np.zeros([inputnodes,1])
         #y=np.zeros([outputnodes,1])
@@ -300,8 +273,8 @@ def testNet(network, xmatrix):
         fatemp=np.transpose(outputlayer)
         #print('full fat',fatemp)
         acttrans=np.transpose(lastact)
-        print('acttrans',acttrans)
-        print('fatpos',fatemp[i,:])
+        #print('acttrans',acttrans)
+        #print('fatpos',fatemp[i,:])
 
         fatemp[i,:]=acttrans
         outputlayer=np.transpose(fatemp)
@@ -318,8 +291,9 @@ def shufflePosNegs(poslist,neglist):
     #print(neglist[:10])
 
     #select x examples from each list
-    shortposlist=list(np.random.choice(poslist,50,replace=False))
-    shortneglist=list(np.random.choice(neglist,50,replace=False))
+    
+    shortposlist=list(np.random.choice(poslist,200,replace=False))
+    shortneglist=list(np.random.choice(neglist,200,replace=False))
     #print('rand',shortposlist[:10])
     #print('rand',shortneglist[:10])
     set1=[]
@@ -374,71 +348,96 @@ def createInputs(set1):
     #print(sampleTemp)
     sampleInput=np.transpose(sampleTemp)
     #print('transpose')
-    print('input',sampleInput)
-    print(sampleInput.dtype)
-    print('label',labels)
-    '''
-    samplelabel=[]
-    for i,j in zip(sampleInput, labels):
-        print(i,j)
-        samplelabel.append((i,j))
-    '''
+    #print('input',sampleInput)
+    #print(sampleInput.dtype)
+    #print('label',labels)
+    
     return sampleInput,labels, lensamples
 
-def CVtrainNet(poslist,neglist,iters):
+def CVtrainNet(poslist,neglist,iters, folds=10):
     #this function will split data into training and test sets X times, 10 is the default
     #first just do one split into training and test sets
+    '''
     samplelabels=shufflePosNegs(poslist,neglist)
     
     print('check tuple',samplelabels)
     #split samplelabels into a training and test set
     shuffle(samplelabels)
     print(len(samplelabels))
+    '''
 
     #split into training and testing
     #TODO change to ensure positive and negative examples in both
-    trainnums=int(0.9*len(samplelabels))
-    print('split',trainnums)
-    training=samplelabels[:trainnums]
-    testing=samplelabels[trainnums:]
-    
-    '''
-    #split tuples 
-    trainX=[ x[0] for x in training ]
-    trainLabel=[ x[1] for x in training ]
-    testingX=[ x[0] for x in testing ]
-    testingLabel=[ x[1] for x in testing ]
-    
+    #trainnums=int(0.9*len(samplelabels))
+    #print('split',trainnums)
 
-    print(len(trainX),len(trainLabel))
-    print(len(testingX),len(testingLabel))
-   
-    print(trainX)
-    print(testingX)
-    
-    '''
-    print('check')
-    trainX,trainLabel,lensamples=createInputs(training)
-    #train net
-    trainednet,final,mincost=trainNet(trainX, trainLabel, lensamples,iters)
-    print('train')
-    print(trainLabel)
-    print('trainout')
-    print(final.round(decimals=2))
+    for f in range(folds):
+        samplelabels=shufflePosNegs(poslist,neglist)
+        trainnums=int(0.9*len(samplelabels))
+        #print('split',trainnums)
+        #print('check tuple',samplelabels)
+        #split samplelabels into a training and test set
+        shuffle(samplelabels)
+        #print(len(samplelabels))
 
-    print(trainednet)
+        training=samplelabels[:trainnums]
+        testing=samplelabels[trainnums:]
+        
+        #test to make sure there are positive and negative training examples
+        counts=Counter(x[1] for x in training)
+        numpos=counts[1]
+        numneg=counts[0]
+        
+        #print('pos',numpos)
+        #print(0.15*len(training))
+        #make sure at least 20% of the positive examples are in the training set
+        while numpos < 0.2*len(training):
+            shuffle(samplelabels)
+            #print(len(samplelabels))
+            training=samplelabels[:trainnums]
+            testing=samplelabels[trainnums:]
 
-    print('check1')
-    testingX,testingLabel,lensamples=createInputs(testing)
-    #test net
-    print('check2')
-    out=testNet(trainednet,testingX)
-    #activations=feedforward(trainednet,trainX)
-    #out=activations[-1]
-    print('test')
-    print(testingLabel)
-    print(out.round(decimals=2))
+        #print('check')
+        trainX,trainLabel,lensamples=createInputs(training)
+        #train net
+        trainednet,final,mincost=trainNet(trainX, trainLabel, lensamples,iters)
+        #print('train')
+        #print(trainLabel)
+        #print('trainout')
+        #print(final.round(decimals=3))
 
+        #print(trainednet)
+
+        #print('check1')
+        testingX,testingLabel,lensamples=createInputs(testing)
+        #test net
+        
+        #print('check2')
+        out=testNet(trainednet,testingX,)
+        #activations=feedforward(trainednet,trainX)
+        #out=activations[-1]
+        #print(testingX)
+        
+        testingout=np.transpose(testingX)
+        #print(testingout)
+        numseqs=[]
+        for seq1 in testingout:
+            #seq=''
+            #print(seq1)
+            seq=''.join(seq1)
+            #print(util.seq_unencode(seq))
+            numseqs.append(util.seq_unencode(seq))
+        
+        print('cost',mincost)
+        print('test')
+        print(testingLabel)
+        #print(out.round(decimals=3))
+        
+        out2=np.transpose(out)
+        for seq, num in zip(numseqs, out2):
+            #print('ex')
+            num=num[0]
+            print(seq,num.round(decimals=3))
 
 def crossValidation(train, test):
     #this function will train a network then test the network
