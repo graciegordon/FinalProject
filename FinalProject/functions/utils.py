@@ -33,6 +33,29 @@ def seq_encode(seq):
     #encodedseqlist=encodedseqlist.astype(int)
     return encodedseqlist
 
+def seq_unencode(seq):
+    #take in an encoded sequence and output the nucleotide sequence
+    A='0001'
+    T='0010'
+    C='0100'
+    G='1000'
+    
+    outseq=''
+    for i in range(0,len(seq),4):
+        let=str(seq[i:i+4])
+        #print(let)
+        #print(A,T,C,G)
+        if let == A:
+            outseq+='A'
+        if let == C:
+            outseq+='C'
+        if let == T:
+            outseq+='T'
+        if let == G:
+            outseq+='G'
+
+    return outseq
+
 def make_mats(seqlist):
 
     encodedseqlist=np.matrix(seqlist)
@@ -64,6 +87,11 @@ def read_fasta(file_name):
     seqs=seqs[1:]
     return seqs
 
+def reverse_complement(dna):
+    complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+    return ''.join([complement[base] for base in dna[::-1]])
+
+#print(seq_unencode('0001001001001000'))
 #test=['aaattccggtgtcacgt','gggtgccaagagtcgat','gagttgaccagtcagtt']
 
 #print(seq_encode(test))
