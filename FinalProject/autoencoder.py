@@ -1,4 +1,5 @@
 from functions import neural_network as nn
+from functions import utils
 import numpy as np
 
 ##testing autoencoder
@@ -22,7 +23,7 @@ print(identityinput8)
 #x = np.array([[1],[0],[0],[0],[0],[0],[0],[0]])
 mincost=float('inf')
 testcost=5
-for i in range(1000):
+for i in range(10000):
     #while mincost>=float(testcost):
     testcost, finalactivation, trainednetwork = nn.gradientdescent(newnet, identityinput8, identityinput8)
     #print('cost',testcost)

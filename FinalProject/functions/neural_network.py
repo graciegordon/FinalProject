@@ -6,6 +6,7 @@ import numpy as np
 from random import shuffle
 from collections import Counter
 import utils as util
+import rocCurve as roc 
 
 class Layer:
 
@@ -226,8 +227,9 @@ def trainNet(samples, labels, inputexample,iters):
     #can make this more sophisticated by training until cost no longer decreases more than a specific amount
     mincost=float('inf')
     #for i in range(iters):
-    trainup=0    
-    while mincost > .0001:
+    trainup=0
+    it=0
+    while (mincost > .0001) or (it<iters):
         testcost, finalactivation, trainednetwork = gradientdescent(newnet, samples, labels)
         #print('cost',testcost)
         #print('activation',finalactivation)
@@ -235,8 +237,7 @@ def trainNet(samples, labels, inputexample,iters):
             #print('inloop')
             final=finalactivation
             mincost=testcost
-        else:
-            trainup+=1
+        it+=1
 
     '''
     print('final')   
@@ -292,8 +293,11 @@ def shufflePosNegs(poslist,neglist):
 
     #select x examples from each list
     
-    shortposlist=list(np.random.choice(poslist,200,replace=False))
-    shortneglist=list(np.random.choice(neglist,200,replace=False))
+    shortposlist=list(np.random.choice(poslist,100,replace=False))
+    if neglist != []:
+        shortneglist=list(np.random.choice(neglist,100,replace=False))
+    else:
+        shortneglist=[]
     #print('rand',shortposlist[:10])
     #print('rand',shortneglist[:10])
     set1=[]
@@ -354,23 +358,16 @@ def createInputs(set1):
     
     return sampleInput,labels, lensamples
 
-def CVtrainNet(poslist,neglist,iters, folds=10):
+def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
     #this function will split data into training and test sets X times, 10 is the default
     #first just do one split into training and test sets
-    '''
-    samplelabels=shufflePosNegs(poslist,neglist)
-    
-    print('check tuple',samplelabels)
-    #split samplelabels into a training and test set
-    shuffle(samplelabels)
-    print(len(samplelabels))
-    '''
 
     #split into training and testing
-    #TODO change to ensure positive and negative examples in both
     #trainnums=int(0.9*len(samplelabels))
     #print('split',trainnums)
-
+    
+    auc=0
+    bestauc=0
     for f in range(folds):
         samplelabels=shufflePosNegs(poslist,neglist)
         trainnums=int(0.9*len(samplelabels))
@@ -388,10 +385,11 @@ def CVtrainNet(poslist,neglist,iters, folds=10):
         numpos=counts[1]
         numneg=counts[0]
         
-        #print('pos',numpos)
-        #print(0.15*len(training))
+        print('pos',numpos)
+        print(0.15*len(training))
         #make sure at least 20% of the positive examples are in the training set
         while numpos < 0.2*len(training):
+            print('loop')
             shuffle(samplelabels)
             #print(len(samplelabels))
             training=samplelabels[:trainnums]
@@ -401,23 +399,13 @@ def CVtrainNet(poslist,neglist,iters, folds=10):
         trainX,trainLabel,lensamples=createInputs(training)
         #train net
         trainednet,final,mincost=trainNet(trainX, trainLabel, lensamples,iters)
-        #print('train')
-        #print(trainLabel)
-        #print('trainout')
-        #print(final.round(decimals=3))
-
-        #print(trainednet)
 
         #print('check1')
         testingX,testingLabel,lensamples=createInputs(testing)
         #test net
         
-        #print('check2')
         out=testNet(trainednet,testingX,)
-        #activations=feedforward(trainednet,trainX)
-        #out=activations[-1]
-        #print(testingX)
-        
+            
         testingout=np.transpose(testingX)
         #print(testingout)
         numseqs=[]
@@ -438,8 +426,50 @@ def CVtrainNet(poslist,neglist,iters, folds=10):
             #print('ex')
             num=num[0]
             print(seq,num.round(decimals=3))
+       
+        print('get rates')
+        
+        #flatten list
+        testingLabel=np.transpose(testingLabel).tolist()
+        out2=out2.tolist()
+        
+        testingLabel=[item for sublist in testingLabel for item in sublist]
+        out2=[item for sublist in out2 for item in sublist]
 
-def crossValidation(train, test):
-    #this function will train a network then test the network
-    assert 1==1
+        tpr,fpr=roc.GetRates(testingLabel, out2)
+        #calc AUC from tpr and fpr
+        auc=0
+        for t,f in zip(tpr,fpr):
+            auc=auc+t
+        auc=auc/(len(tpr)-1)
+        print('auc',auc)
+        print(tpr[0],fpr[0])
+        
+        if bestauc<=auc:
+            bestlabel=testingLabel
+            bestout=out2
+            bestnet=trainednet
+
+
+    roc.DepictROCCurve(bestlabel, bestout, 'predictions', 'b', 'RAP1.png', 'True') 
+
+    #held out data test
+    shuffle(testlist)
+    fake=[]
+    tests=shufflePosNegs(testlist,fake)
+    testfinal,testfakelabel,lensamples=createInputs(tests)
+    final=testNet(bestnet,testfinal)
+    testfinalout=np.transpose(testfinal)
+    numseqs=[]
+    for seq1 in testfinalout:
+        seq=''.join(seq1)
+        numseqs.append(util.seq_unencode(seq))
+
+    print('held-out')
+    final2=np.transpose(final)
+    for seq, num in zip(numseqs, final2):
+        num=num[0]
+        print(seq,num.round(decimals=3))
+
+
 
