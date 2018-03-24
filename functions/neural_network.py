@@ -117,11 +117,11 @@ def backpropagation(network, x,y):
 
     return gradw, gradb, lastact
 
-def gradientdescent(network, xmatrix, ymatrix, alpha=0.1, weightDecay=0.9):
+def gradientdescent(network, xmatrix, ymatrix, alpha, weightDecay):
     #use logistic regression cost function with regularization
     #weightdeca=lambda
     #J(W,b,x,y)=1/numbertrainingexamples(sum(y*log(h(x))+(1-y)*log(1-(h(x)))))+lambda/2numexampels(sum(sum(sum(weights)^2
-
+    #print('a and lam',alpha,weightDecay)
     #initialize matricies the same dimensions as the weight/bias of each layer
     #BigDelta to compute partial derivatives, accumulaters 
     deltaW=[None]*(len(network)-1) #store weight of each layer
@@ -207,12 +207,12 @@ def gradientdescent(network, xmatrix, ymatrix, alpha=0.1, weightDecay=0.9):
     
     return totalcost, outputlayer, network
 
-def trainNet(samples, labels, inputexample,iters):
+def trainNet(samples, labels, inputexample,iters,alpha, weightDecay):
     #function that will train a neural network
     #create network
     ins=inputexample
     #print('ins',ins)
-    networkShape = np.array([ins,int(ins/2),1])
+    networkShape = np.array([ins,int(3*(ins/4)),1])
     #print('netshape', networkShape)
     inputs = Layer(networkShape[0], None, networkShape[1])
     hidden = Layer(networkShape[1], inputs, networkShape[2])
@@ -229,8 +229,9 @@ def trainNet(samples, labels, inputexample,iters):
     #for i in range(iters):
     trainup=0
     it=0
-    while (mincost > .0001) or (it<iters):
-        testcost, finalactivation, trainednetwork = gradientdescent(newnet, samples, labels)
+    while ((mincost > .0001) and (it<=iters)):
+        #print(it,iters)
+        testcost, finalactivation, trainednetwork = gradientdescent(newnet, samples, labels,alpha,weightDecay)
         #print('cost',testcost)
         #print('activation',finalactivation)
         if mincost>float(testcost):
@@ -358,15 +359,16 @@ def createInputs(set1):
     
     return sampleInput,labels, lensamples
 
-def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
+def CVtrainNet(poslist,neglist,testlist,iters, folds,alpha, weightDecay):
     #this function will split data into training and test sets X times, 10 is the default
     #first just do one split into training and test sets
 
     #split into training and testing
     #trainnums=int(0.9*len(samplelabels))
     #print('split',trainnums)
-    
+    #print('a and lam',alpha,weightDecay)
     auc=0
+    avgauc=0
     bestauc=0
     for f in range(folds):
         samplelabels=shufflePosNegs(poslist,neglist)
@@ -385,8 +387,8 @@ def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
         numpos=counts[1]
         numneg=counts[0]
         
-        print('pos',numpos)
-        print(0.15*len(training))
+        #print('pos',numpos)
+        #print(0.15*len(training))
         #make sure at least 20% of the positive examples are in the training set
         while numpos < 0.2*len(training):
             print('loop')
@@ -398,7 +400,7 @@ def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
         #print('check')
         trainX,trainLabel,lensamples=createInputs(training)
         #train net
-        trainednet,final,mincost=trainNet(trainX, trainLabel, lensamples,iters)
+        trainednet,final,mincost=trainNet(trainX, trainLabel, lensamples,iters,alpha, weightDecay)
 
         #print('check1')
         testingX,testingLabel,lensamples=createInputs(testing)
@@ -416,7 +418,7 @@ def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
             #print(util.seq_unencode(seq))
             numseqs.append(util.seq_unencode(seq))
         
-        print('cost',mincost)
+        #print('cost',mincost)
         print('test')
         print(testingLabel)
         #print(out.round(decimals=3))
@@ -427,7 +429,7 @@ def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
             num=num[0]
             print(seq,num.round(decimals=3))
        
-        print('get rates')
+        #print('get rates')
         
         #flatten list
         testingLabel=np.transpose(testingLabel).tolist()
@@ -443,8 +445,11 @@ def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
             auc=auc+t
         auc=auc/(len(tpr)-1)
         print('auc',auc)
-        print(tpr[0],fpr[0])
+        #print(tpr[0],fpr[0])
         
+        if auc>1:
+            auc=1
+        avgauc+=auc
         if bestauc<=auc:
             bestlabel=testingLabel
             bestout=out2
@@ -470,6 +475,6 @@ def CVtrainNet(poslist,neglist,testlist,iters, folds=1):
     for seq, num in zip(numseqs, final2):
         num=num[0]
         print(seq,num.round(decimals=3))
-
-
+    avgauc=avgauc/folds
+    return avgauc
 

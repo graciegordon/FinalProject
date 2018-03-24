@@ -7,9 +7,9 @@ import numpy as np
 import random
 
 #read in sites
-posfile='/Users/student/Documents/Algorithms/Alg_final_project/FinalProject/data/rap1-lieb-positives.txt'
-negfile='/Users/student/Documents/Algorithms/Alg_final_project/FinalProject/data/yeast-upstream-1k-negative.fa'
-testfile='/Users/student/Documents/Algorithms/Alg_final_project/FinalProject/data/rap1-lieb-test.txt'
+posfile='/Users/student/Documents/Algorithms/Alg_final_project/data/rap1-lieb-positives.txt'
+negfile='/Users/student/Documents/Algorithms/Alg_final_project/data/yeast-upstream-1k-negative.fa'
+testfile='/Users/student/Documents/Algorithms/Alg_final_project/data/rap1-lieb-test.txt'
 poslist=util.read_pos(posfile)
 finaltestlist=util.read_pos(testfile)
 posreversecomp=[]
@@ -45,22 +45,23 @@ neglist=shortneg
 neglist=util.seq_encode(neglist)
 
 
-#print('neglist',neglist[:10])
 #sample x random seqs from positive and x from the negative to make sample
 #keep track of which samples come from each group
 #start with small training set
 
-#sampleInputs,labels,samplelength=nn.shufflePosNegs(poslist,neglist)
 
-#trainednet,final,mincost=nn.trainNet(sampleInputs, labels, samplelength,1000)
+#alphas=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+#lambdas=[0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 
-nn.CVtrainNet(poslist,neglist,finaltest,1000,5)
+afile=open('auc.txt','w')
 
-'''
-print('final cost',mincost)
-print('final',final)
-print('labels', labels)
-print('rounded',final.round(decimals=2))
-'''
-#testlist=util.read_pos(testfile)
-#print('test',testlist)
+alphas=[0.1]
+lambdas=[0.5]
+for a in alphas:
+    for l in lambdas:
+        
+        auc=nn.CVtrainNet(poslist,neglist,finaltest,2000,3,a,l)
+        
+        afile.write(str(a)+'\t'+str(l)+'\t'+str(auc)+'\n')
+
+afile.close()
